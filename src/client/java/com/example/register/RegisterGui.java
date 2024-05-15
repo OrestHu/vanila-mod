@@ -1,6 +1,7 @@
 package com.example.register;
 
 import com.example.RegistermodClient;
+import com.example.confg.MyConfig;
 import io.github.cottonmc.cotton.gui.client.LightweightGuiDescription;
 import io.github.cottonmc.cotton.gui.widget.*;
 import io.github.cottonmc.cotton.gui.widget.data.HorizontalAlignment;
@@ -17,7 +18,9 @@ import java.net.URL;
 import java.util.UUID;
 
 public class RegisterGui extends LightweightGuiDescription {
+    MyConfig config = new MyConfig();
     public RegisterGui() throws IOException {
+
         if(check()){
             signIn();
         }else {
@@ -44,9 +47,21 @@ public class RegisterGui extends LightweightGuiDescription {
         root.add(label,5,1, 3,3);
         root.add(savePasswordMenu, 4,5);
 
+        savePasswordMenu.setToggle(config.getAutoInputEnabled());
+
+        if (config.getAutoInputEnabled()) {
+            textField.setText(config.getSavedPassword());
+        }
 
         savePasswordMenu.setOnToggle(on -> {
-
+            boolean Click = on.booleanValue();
+            if (Click) {
+                System.out.println("save");
+                config.updateConfig("enableAutoInput", true);
+            } else {
+                System.out.println("delete");
+                config.updateConfig("enableAutoInput", false);
+            }
         });
 
         button.setOnClick(() -> {
@@ -59,6 +74,9 @@ public class RegisterGui extends LightweightGuiDescription {
                 root.add(badPassword, 2,2);
                 badPassword.setColor(0xFF0000);
             }else {
+                if (config.getAutoInputEnabled()) {
+                    config.updateConfig("password", password);
+                }
                 try {
                     URL url = new URL("http://ec2-16-171-4-211.eu-north-1.compute.amazonaws.com:8090/api/v1/account/signUp");
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -115,8 +133,21 @@ public class RegisterGui extends LightweightGuiDescription {
         root.add(savePasswordMenu, 4,5);
 
 
-        savePasswordMenu.setOnToggle(on -> {
+        savePasswordMenu.setToggle(config.getAutoInputEnabled());
 
+        if (config.getAutoInputEnabled()) {
+            textField.setText(config.getSavedPassword());
+        }
+
+        savePasswordMenu.setOnToggle(on -> {
+            boolean Click = on.booleanValue();
+            if (Click) {
+                System.out.println("save");
+                config.updateConfig("enableAutoInput", true);
+            } else {
+                System.out.println("delete");
+                config.updateConfig("enableAutoInput", false);
+            }
         });
 
         button.setOnClick(() -> {
@@ -129,8 +160,11 @@ public class RegisterGui extends LightweightGuiDescription {
                 root.add(badPassword, 2,2);
                 badPassword.setColor(0xFF0000);
             }else {
+                if (config.getAutoInputEnabled()) {
+                    config.updateConfig("password", password);
+                }
                 try {
-                    URL url = new URL("http://ec2-16-171-4-211.eu-north-1.compute.amazonaws.com:8090/api/v1/account/signUp");
+                    URL url = new URL("http://ec2-16-171-4-211.eu-north-1.compute.amazonaws.com:8090/api/v1/account/signIn");
                     HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                     conn.setRequestMethod("POST");
                     conn.setRequestProperty("Content-Type", "application/json; utf-8");
@@ -158,7 +192,7 @@ public class RegisterGui extends LightweightGuiDescription {
                 } catch (Exception e) {
                     e.printStackTrace();
                     root.add(badPassword, 2, 2);
-                    badPassword.setText(Text.literal("Error during sign up!"));
+                    badPassword.setText(Text.literal("Cannot connect to the server"));
                     badPassword.setColor(0xFF0000);
                 }
             }
@@ -187,7 +221,7 @@ public class RegisterGui extends LightweightGuiDescription {
                 return true;
             }
         }catch (Exception e) {
-            System.out.println("Oops");
+            System.out.println("Cannot connect to the server");
         }
         return false;
     }
