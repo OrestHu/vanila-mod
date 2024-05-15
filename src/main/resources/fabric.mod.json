@@ -1,0 +1,44 @@
+{
+	"schemaVersion": 1,
+	"id": "register-mod",
+	"version": "${version}",
+	"name": "register-mod",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/register-mod/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.example.Registermod"
+		],
+		"client": [
+			"com.example.RegistermodClient"
+		],
+		"fabric-datagen": [
+			"com.example.RegistermodDataGenerator"
+		]
+	},
+	"mixins": [
+		"register-mod.mixins.json",
+		{
+			"config": "register-mod.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.15.11",
+		"minecraft": "~1.20.6",
+		"java": ">=21",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
