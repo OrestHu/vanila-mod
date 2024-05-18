@@ -64,6 +64,8 @@ public class RegisterGui extends LightweightGuiDescription {
             }
         });
 
+        System.out.println(textField.getText());
+
         button.setOnClick(() -> {
             String password = textField.getText();
             UUID uuid = MinecraftClient.getInstance().player.getUuid();
@@ -85,6 +87,7 @@ public class RegisterGui extends LightweightGuiDescription {
                     conn.setRequestProperty("Accept", "application/json");
                     conn.setDoOutput(true);
 
+                    System.out.println(textField.getText() + "set");
                     String jsonInputString = String.format("{\"name\": \"%s\", \"uuid\": \"%s\", \"password\": \"%s\"}", name, userUuid, password);
 
                     try (OutputStream os = conn.getOutputStream()) {
@@ -93,7 +96,6 @@ public class RegisterGui extends LightweightGuiDescription {
                     }
 
                     int code = conn.getResponseCode();
-                    System.out.println("Response Code: " + code);
 
                     if (code == 200) {
                         RegistermodClient.setLoggedIn(true);
@@ -132,8 +134,6 @@ public class RegisterGui extends LightweightGuiDescription {
         root.add(label,5,1, 3,3);
         root.add(savePasswordMenu, 4,5);
 
-
-        savePasswordMenu.setToggle(config.getAutoInputEnabled());
 
         if (config.getAutoInputEnabled()) {
             textField.setText(config.getSavedPassword());
@@ -179,14 +179,13 @@ public class RegisterGui extends LightweightGuiDescription {
                     }
 
                     int code = conn.getResponseCode();
-                    System.out.println("Response Code: " + code);
 
                     if (code == 200) {
                         RegistermodClient.setLoggedIn(true);
                         MinecraftClient.getInstance().player.closeScreen();
                     } else {
                         root.add(badPassword, 2, 2);
-                        badPassword.setText(Text.literal("Error during sign up!"));
+                        badPassword.setText(Text.literal("Error during sign in!"));
                         badPassword.setColor(0xFF0000);
                     }
                 } catch (Exception e) {

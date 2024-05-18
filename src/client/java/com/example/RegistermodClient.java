@@ -19,24 +19,29 @@ import java.io.IOException;
 public class RegistermodClient implements ClientModInitializer {
 	private static boolean isLoggedIn = false;
 	public static final String MOD_ID = "register-mod";
-	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+	private static final String ALLOWED_SERVER_IP = "localhost";
 	private static MyConfig config = new MyConfig();
-
 
 	@Override
 	public void onInitializeClient() {
 		config.loadConfig();
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
-			if (!isLoggedIn && client.currentScreen == null && client.player != null) {
-                try {
-                    MinecraftClient.getInstance().setScreen(new RegisterScreen(new RegisterGui()));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-		});
+			if (client.getCurrentServerEntry() == null) {
+				return;
+			}
 
+			String serverIp = client.getCurrentServerEntry().address;
+			if (!ALLOWED_SERVER_IP.equals(serverIp)) {
+				client.world.disconnect();
+			} else if (!isLoggedIn && client.currentScreen == null && client.player != null) {
+				try {
+					MinecraftClient.getInstance().setScreen(new RegisterScreen(new RegisterGui()));
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			}
+		});
 		ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
 			isLoggedIn = false;
 		});
