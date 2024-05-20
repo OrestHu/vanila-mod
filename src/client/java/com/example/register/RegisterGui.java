@@ -2,6 +2,8 @@ package com.example.register;
 
 import com.example.RegistermodClient;
 import com.example.confg.MyConfig;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import io.github.cottonmc.cotton.gui.client.LightweightGuiDescription;
 import io.github.cottonmc.cotton.gui.widget.*;
 import io.github.cottonmc.cotton.gui.widget.data.HorizontalAlignment;
@@ -9,10 +11,7 @@ import io.github.cottonmc.cotton.gui.widget.data.VerticalAlignment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.UUID;
@@ -37,8 +36,8 @@ public class RegisterGui extends LightweightGuiDescription {
 
         setRootPanel(root);
         root.setSize(240, 150);
+
         button.setLabel(Text.literal("Sign Up"));
-        textField.setMaxLength(32);
         label.setVerticalAlignment(VerticalAlignment.TOP);
         label.setHorizontalAlignment(HorizontalAlignment.CENTER);
 
@@ -63,8 +62,6 @@ public class RegisterGui extends LightweightGuiDescription {
                 config.updateConfig("enableAutoInput", false);
             }
         });
-
-        System.out.println(textField.getText());
 
         button.setOnClick(() -> {
             String password = textField.getText();
@@ -101,8 +98,29 @@ public class RegisterGui extends LightweightGuiDescription {
                         RegistermodClient.setLoggedIn(true);
                         MinecraftClient.getInstance().player.closeScreen();
                     } else {
+                        String errorMessage = "Error during sign up!";
+                        try (InputStream errorStream = conn.getErrorStream()) {
+                            if (errorStream != null) {
+                                try (BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, "utf-8"))) {
+                                    StringBuilder responseBuilder = new StringBuilder();
+                                    String responseLine;
+                                    while ((responseLine = reader.readLine()) != null) {
+                                        responseBuilder.append(responseLine.trim());
+                                    }
+                                    Gson gson = new Gson();
+                                    JsonObject jsonResponse = gson.fromJson(responseBuilder.toString(), JsonObject.class);
+                                    if (jsonResponse.has("error")) {
+                                        errorMessage = jsonResponse.get("error").getAsString();
+                                    }
+                                }
+                            }
+                        } catch (IOException | com.google.gson.JsonSyntaxException ex) {
+                            ex.printStackTrace();
+                            errorMessage = "Error reading error message from server";
+                        }
+
                         root.add(badPassword, 2, 2);
-                        badPassword.setText(Text.literal("Error during sign up!"));
+                        badPassword.setText(Text.literal(errorMessage));
                         badPassword.setColor(0xFF0000);
                     }
                 } catch (Exception e) {
@@ -125,7 +143,6 @@ public class RegisterGui extends LightweightGuiDescription {
         setRootPanel(root);
         root.setSize(240, 150);
         button.setLabel(Text.literal("Sign In"));
-        textField.setMaxLength(32);
         label.setVerticalAlignment(VerticalAlignment.TOP);
         label.setHorizontalAlignment(HorizontalAlignment.CENTER);
 
@@ -134,6 +151,7 @@ public class RegisterGui extends LightweightGuiDescription {
         root.add(label,5,1, 3,3);
         root.add(savePasswordMenu, 4,5);
 
+        savePasswordMenu.setToggle(config.getAutoInputEnabled());
 
         if (config.getAutoInputEnabled()) {
             textField.setText(config.getSavedPassword());
@@ -184,8 +202,29 @@ public class RegisterGui extends LightweightGuiDescription {
                         RegistermodClient.setLoggedIn(true);
                         MinecraftClient.getInstance().player.closeScreen();
                     } else {
+                        String errorMessage = "Error during sign in!";
+                        try (InputStream errorStream = conn.getErrorStream()) {
+                            if (errorStream != null) {
+                                try (BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, "utf-8"))) {
+                                    StringBuilder responseBuilder = new StringBuilder();
+                                    String responseLine;
+                                    while ((responseLine = reader.readLine()) != null) {
+                                        responseBuilder.append(responseLine.trim());
+                                    }
+                                    Gson gson = new Gson();
+                                    JsonObject jsonResponse = gson.fromJson(responseBuilder.toString(), JsonObject.class);
+                                    if (jsonResponse.has("error")) {
+                                        errorMessage = jsonResponse.get("error").getAsString();
+                                    }
+                                }
+                            }
+                        } catch (IOException | com.google.gson.JsonSyntaxException ex) {
+                            ex.printStackTrace();
+                            errorMessage = "Error reading error message from server";
+                        }
+
                         root.add(badPassword, 2, 2);
-                        badPassword.setText(Text.literal("Error during sign in!"));
+                        badPassword.setText(Text.literal(errorMessage));
                         badPassword.setColor(0xFF0000);
                     }
                 } catch (Exception e) {
