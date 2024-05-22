@@ -12,7 +12,9 @@ import net.minecraft.client.MinecraftClient;
 
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.Socket;
 import java.net.URL;
+import java.net.UnknownHostException;
 
 @Environment(EnvType.CLIENT)
 public class RegistermodClient implements ClientModInitializer {
@@ -27,9 +29,15 @@ public class RegistermodClient implements ClientModInitializer {
 
 		ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
 			if (client.player != null) {
-				String playerUuid = client.player.getUuid().toString();
-				requestAccess(playerUuid);
-			}
+				try(var socket = new Socket(ALLOWED_SERVER_IP, 5555)){
+					var writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+					var message = client.player.getUuid().toString();
+					writer.write(message);
+					writer.flush();
+				} catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
 		});
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -57,22 +65,5 @@ public class RegistermodClient implements ClientModInitializer {
 
 	public static void setLoggedIn(boolean loggedIn) {
 		isLoggedIn = loggedIn;
-	}
-
-	public void requestAccess(String uuid) {
-		try {
-			URL url = new URL("http://ec2-16-171-4-211.eu-north-1.compute.amazonaws.com:8091/api/v1/access/requestAccess/" + uuid);
-			HttpURLConnection conn = (HttpURLConnection)url.openConnection();
-			conn.setRequestMethod("POST");
-			conn.setRequestProperty("Accept", "application/json");
-			int code = conn.getResponseCode();
-			if (code == 200) {
-				System.out.println("Connected");
-			} else {
-				System.out.println("Error during sign in!");
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 }

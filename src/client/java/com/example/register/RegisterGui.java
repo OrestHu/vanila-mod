@@ -1,9 +1,7 @@
 package com.example.register;
 
-import com.example.RegistermodClient;
 import com.example.confg.MyConfig;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.example.register.service.AuthService;
 import io.github.cottonmc.cotton.gui.client.LightweightGuiDescription;
 import io.github.cottonmc.cotton.gui.widget.*;
 import io.github.cottonmc.cotton.gui.widget.data.HorizontalAlignment;
@@ -12,15 +10,16 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.UUID;
 
 public class RegisterGui extends LightweightGuiDescription {
     MyConfig config = new MyConfig();
     public RegisterGui() throws IOException {
+        assert MinecraftClient.getInstance().player != null;
+        String uuid = MinecraftClient.getInstance().player.getUuid().toString();
 
-        if(check()){
+        boolean check = AuthService.check(uuid);
+
+        if(check){
             signIn();
         }else {
             signUp();
@@ -64,10 +63,11 @@ public class RegisterGui extends LightweightGuiDescription {
         });
 
         button.setOnClick(() -> {
+            assert MinecraftClient.getInstance().player != null;
+
             String password = textField.getText();
-            UUID uuid = MinecraftClient.getInstance().player.getUuid();
-            String name = MinecraftClient.getInstance().player.getName().toString();
-            String userUuid = uuid.toString();
+            var uuid = MinecraftClient.getInstance().player.getUuid().toString();
+            String name = MinecraftClient.getInstance().player.getGameProfile().getName();
 
             if(password.isEmpty()){
                 root.add(badPassword, 2,2);
@@ -76,57 +76,12 @@ public class RegisterGui extends LightweightGuiDescription {
                 if (config.getAutoInputEnabled()) {
                     config.updateConfig("password", password);
                 }
-                try {
-                    URL url = new URL("http://ec2-16-171-4-211.eu-north-1.compute.amazonaws.com:8090/api/v1/account/signUp");
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setRequestMethod("POST");
-                    conn.setRequestProperty("Content-Type", "application/json; utf-8");
-                    conn.setRequestProperty("Accept", "application/json");
-                    conn.setDoOutput(true);
 
-                    System.out.println(textField.getText() + "set");
-                    String jsonInputString = String.format("{\"name\": \"%s\", \"uuid\": \"%s\", \"password\": \"%s\"}", name, userUuid, password);
+                String error = AuthService.signUpLogic(name, uuid, password);
 
-                    try (OutputStream os = conn.getOutputStream()) {
-                        byte[] input = jsonInputString.getBytes("utf-8");
-                        os.write(input, 0, input.length);
-                    }
-
-                    int code = conn.getResponseCode();
-
-                    if (code == 200) {
-                        RegistermodClient.setLoggedIn(true);
-                        MinecraftClient.getInstance().player.closeScreen();
-                    } else {
-                        String errorMessage = "Error during sign up!";
-                        try (InputStream errorStream = conn.getErrorStream()) {
-                            if (errorStream != null) {
-                                try (BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, "utf-8"))) {
-                                    StringBuilder responseBuilder = new StringBuilder();
-                                    String responseLine;
-                                    while ((responseLine = reader.readLine()) != null) {
-                                        responseBuilder.append(responseLine.trim());
-                                    }
-                                    Gson gson = new Gson();
-                                    JsonObject jsonResponse = gson.fromJson(responseBuilder.toString(), JsonObject.class);
-                                    if (jsonResponse.has("error")) {
-                                        errorMessage = jsonResponse.get("error").getAsString();
-                                    }
-                                }
-                            }
-                        } catch (IOException | com.google.gson.JsonSyntaxException ex) {
-                            ex.printStackTrace();
-                            errorMessage = "Error reading error message from server";
-                        }
-
-                        root.add(badPassword, 2, 2);
-                        badPassword.setText(Text.literal(errorMessage));
-                        badPassword.setColor(0xFF0000);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                if(!error.isEmpty()) {
                     root.add(badPassword, 2, 2);
-                    badPassword.setText(Text.literal("Error during sign up!"));
+                    badPassword.setText(Text.literal(error));
                     badPassword.setColor(0xFF0000);
                 }
             }
@@ -169,10 +124,11 @@ public class RegisterGui extends LightweightGuiDescription {
         });
 
         button.setOnClick(() -> {
+            assert MinecraftClient.getInstance().player != null;
+
             String password = textField.getText();
-            UUID uuid = MinecraftClient.getInstance().player.getUuid();
-            String name = MinecraftClient.getInstance().player.getName().toString();
-            String userUuid = uuid.toString();
+            var uuid = MinecraftClient.getInstance().player.getUuid().toString();
+            String name = MinecraftClient.getInstance().player.getGameProfile().getName();
 
             if(password.isEmpty()){
                 root.add(badPassword, 2,2);
@@ -181,86 +137,15 @@ public class RegisterGui extends LightweightGuiDescription {
                 if (config.getAutoInputEnabled()) {
                     config.updateConfig("password", password);
                 }
-                try {
-                    URL url = new URL("http://ec2-16-171-4-211.eu-north-1.compute.amazonaws.com:8090/api/v1/account/signIn");
-                    HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                    conn.setRequestMethod("POST");
-                    conn.setRequestProperty("Content-Type", "application/json; utf-8");
-                    conn.setRequestProperty("Accept", "application/json");
-                    conn.setDoOutput(true);
 
-                    String jsonInputString = String.format("{\"name\": \"%s\", \"uuid\": \"%s\", \"password\": \"%s\"}", name, userUuid, password);
+                String error = AuthService.signInLogic(name, uuid, password);
 
-                    try (OutputStream os = conn.getOutputStream()) {
-                        byte[] input = jsonInputString.getBytes("utf-8");
-                        os.write(input, 0, input.length);
-                    }
-
-                    int code = conn.getResponseCode();
-
-                    if (code == 200) {
-                        RegistermodClient.setLoggedIn(true);
-                        MinecraftClient.getInstance().player.closeScreen();
-                    } else {
-                        String errorMessage = "Error during sign in!";
-                        try (InputStream errorStream = conn.getErrorStream()) {
-                            if (errorStream != null) {
-                                try (BufferedReader reader = new BufferedReader(new InputStreamReader(errorStream, "utf-8"))) {
-                                    StringBuilder responseBuilder = new StringBuilder();
-                                    String responseLine;
-                                    while ((responseLine = reader.readLine()) != null) {
-                                        responseBuilder.append(responseLine.trim());
-                                    }
-                                    Gson gson = new Gson();
-                                    JsonObject jsonResponse = gson.fromJson(responseBuilder.toString(), JsonObject.class);
-                                    if (jsonResponse.has("error")) {
-                                        errorMessage = jsonResponse.get("error").getAsString();
-                                    }
-                                }
-                            }
-                        } catch (IOException | com.google.gson.JsonSyntaxException ex) {
-                            ex.printStackTrace();
-                            errorMessage = "Error reading error message from server";
-                        }
-
-                        root.add(badPassword, 2, 2);
-                        badPassword.setText(Text.literal(errorMessage));
-                        badPassword.setColor(0xFF0000);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
+                if(!error.isEmpty()) {
                     root.add(badPassword, 2, 2);
-                    badPassword.setText(Text.literal("Cannot connect to the server"));
+                    badPassword.setText(Text.literal(error));
                     badPassword.setColor(0xFF0000);
                 }
             }
         });
-    }
-    public boolean check() {
-        try {
-            UUID uuid = MinecraftClient.getInstance().player.getUuid();
-            String userUuid = uuid.toString();
-
-            URL url = new URL("http://ec2-16-171-4-211.eu-north-1.compute.amazonaws.com:8090/api/v1/account/check/" + userUuid);
-            HttpURLConnection checkConn  = (HttpURLConnection) url.openConnection();
-            checkConn.setRequestMethod("GET");
-            checkConn.setRequestProperty("Accept", "application/json");
-
-            BufferedReader checkReader = new BufferedReader(new InputStreamReader(checkConn.getInputStream()));
-            String checkInputLine;
-            StringBuilder checkResponse = new StringBuilder();
-
-            while ((checkInputLine = checkReader.readLine()) != null) {
-                checkResponse.append(checkInputLine);
-            }
-            checkReader.close();
-
-            if (checkResponse.toString().equals("true")) {
-                return true;
-            }
-        }catch (Exception e) {
-            System.out.println("Cannot connect to the server");
-        }
-        return false;
     }
 }
