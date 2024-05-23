@@ -62,7 +62,7 @@ public class AuthService {
             int code = conn.getResponseCode();
 
             if (code == 200) {
-                try (var socket = new Socket("localhost", 5555)) {
+                try (var socket = new Socket("176.31.135.122", 8061)) {
                     var writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
                     assert MinecraftClient.getInstance().player != null;
                     writer.write(MinecraftClient.getInstance().player.getUuid().toString());
@@ -120,7 +120,7 @@ public class AuthService {
             int code = conn.getResponseCode();
 
             if (code == 200) {
-                try (var socket = new Socket("localhost", 5555)) {
+                try (var socket = new Socket("176.31.135.122", 8061)) {
                     var writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
                     assert MinecraftClient.getInstance().player != null;
                     writer.write(MinecraftClient.getInstance().player.getUuid().toString());
